@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Student Helper</title>
+</head>
+<body>
+    <h1>Ask Llama 3.2</h1>
+    <form id="questionForm">
+        <label for="question">Ask a question:</label><br>
+        <input type="text" id="question" name="question" required><br><br>
+        <button type="submit">Submit</button>
+    </form>
+    <h2>Answer:</h2>
+    <p id="answer"></p>
+
+    <script>
+        document.getElementById('questionForm').addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const question = document.getElementById('question').value;
+            const response = await fetch('/ask', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ question })
+            });
+            const data = await response.json();
+            if (data.error) {
+                document.getElementById('answer').textContent = "Error: " + data.error;
+            } else {
+                document.getElementById('answer').textContent = data.answer;
+            }
+        });
+    </script>
+</body>
+</html>
