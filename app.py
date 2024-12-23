@@ -1,5 +1,5 @@
-import subprocess
 from flask import Flask, request, jsonify, send_from_directory
+import subprocess
 import os
 
 app = Flask(__name__)
@@ -15,37 +15,42 @@ def ask_question():
     if not question:
         return jsonify({"error": "No question provided"}), 400
 
+    # Construct the structured prompt
+    prompt = (
+        f"You are an advanced AI model that provides answers. "
+        f"When answering, follow this structure:\n\n"
+        f"1. Brief overview of the concept.\n"
+        f"2. Step-by-step explanation or solution.\n"
+        f"3. Key points summarized as a list.\n\n"
+        f"Question: {question}\n"
+        f"Answer:"
+    )
+
     try:
-        # Run the Ollama CLI and pass the input via stdin
+        # Run the Llama CLI with the structured prompt
         result = subprocess.run(
             ['ollama', 'run', 'llama3.2'],
-            input=question,
+            input=prompt,
             capture_output=True,
             text=True
         )
 
-        # Log command output for debugging
-        print("Command:", result.args)
-        print("Standard Output:", result.stdout)
-        print("Error Output:", result.stderr)
-
         if result.returncode != 0:
-            # Handle CLI errors
             return jsonify({
                 "error": "Ollama command failed",
                 "details": result.stderr.strip()
             }), 500
 
-        # Parse the output
         answer = result.stdout.strip()
         if not answer:
             return jsonify({"error": "No response from Ollama"}), 500
 
-        return jsonify({"answer": answer})
+        # Extract key points (example logic)
+        key_points = [line.strip() for line in answer.split('\n') if line.startswith('-')]
+
+        return jsonify({"answer": answer, "keyPoints": key_points})
 
     except Exception as e:
-        # Catch and log unexpected errors
-        print("Unexpected error:", e)
         return jsonify({"error": "An unexpected error occurred", "details": str(e)}), 500
 
 if __name__ == '__main__':
