@@ -1,34 +1,197 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Student Helper</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Study Helper</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(to bottom, #f8f9fa, #e9ecef);
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        header {
+            width: 100%;
+            background-color: #007BFF;
+            padding: 10px 20px;
+            color: white;
+            text-align: center;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 1.8rem;
+        }
+
+        nav {
+            margin: 20px 0;
+            display: flex;
+            gap: 20px;
+        }
+
+        nav a {
+            text-decoration: none;
+            color: #007BFF;
+            font-weight: bold;
+        }
+
+        nav a:hover {
+            text-decoration: underline;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 800px;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .search-bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .search-bar input {
+            flex: 1;
+            padding: 10px;
+            font-size: 1rem;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        .search-bar button {
+            padding: 10px 20px;
+            font-size: 1rem;
+            color: white;
+            background-color: #007BFF;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .search-bar button:hover {
+            background-color: #0056b3;
+        }
+
+        .answers-container {
+            margin-top: 20px;
+        }
+
+        .answer {
+            background: #f8f9fa;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin-bottom: 15px;
+        }
+
+        footer {
+            margin-top: 20px;
+            text-align: center;
+            color: #555;
+            font-size: 0.9rem;
+        }
+
+        footer span {
+            color: #007BFF;
+        }
+
+        #loading {
+            text-align: center;
+            font-size: 1.1rem;
+            color: #007BFF;
+            display: none;
+            animation: fade 1.5s infinite;
+        }
+
+        @keyframes fade {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+    </style>
 </head>
 <body>
-    <h1>Ask Llama 3.2</h1>
-    <form id="questionForm">
-        <label for="question">Ask a question:</label><br>
-        <input type="text" id="question" name="question" required><br><br>
-        <button type="submit">Submit</button>
-    </form>
-    <h2>Answer:</h2>
-    <p id="answer"></p>
+    <header>
+        <h1>AI Study Helper</h1>
+    </header>
+
+    <nav>
+        <a href="#">Ask a Question</a>
+        <a href="#">Previous Answers</a>
+        <a href="#">About</a>
+    </nav>
+
+    <div class="container">
+        <div class="search-bar">
+            <input type="text" id="question" placeholder="Type your question here...">
+            <button id="submit-btn">Submit</button>
+        </div>
+
+        <div id="loading">Thinking...</div>
+
+        <div id="answer-container" class="answers-container">
+            <!-- Constructive answers will appear here -->
+        </div>
+    </div>
+
+    <footer>
+        <p>Powered by <span>AI Study Helper</span>. Explore and learn effectively.</p>
+    </footer>
 
     <script>
-        document.getElementById('questionForm').addEventListener('submit', async (event) => {
-            event.preventDefault();
+        document.getElementById('submit-btn').addEventListener('click', async () => {
             const question = document.getElementById('question').value;
-            const response = await fetch('/ask', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ question })
-            });
-            const data = await response.json();
-            if (data.error) {
-                document.getElementById('answer').textContent = "Error: " + data.error;
-            } else {
-                document.getElementById('answer').textContent = data.answer;
+            const answerContainer = document.getElementById('answer-container');
+            const loadingElement = document.getElementById('loading');
+
+            if (!question) {
+                answerContainer.innerHTML = '<p style="color: red;">Please enter a question.</p>';
+                return;
+            }
+
+            // Show loading state
+            answerContainer.innerHTML = '';
+            loadingElement.style.display = 'block';
+
+            try {
+                const response = await fetch('/ask', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ question })
+                });
+
+                const data = await response.json();
+                if (data.error) {
+                    answerContainer.innerHTML = `<p style="color: red;">Error: ${data.error}</p>`;
+                } else {
+                    const answerHtml = `<div class="answer">
+                        <h3>Constructive Answer:</h3>
+                        <p>${data.answer}</p>
+                        ${data.keyPoints && data.keyPoints.length > 0 ? `
+                        <h4>Key Points:</h4>
+                        <ul>
+                            ${data.keyPoints.map(point => `<li>${point}</li>`).join('')}
+                        </ul>` : ''}
+                    </div>`;
+                    answerContainer.innerHTML = answerHtml;
+                }
+            } catch (error) {
+                answerContainer.innerHTML = '<p style="color: red;">An error occurred. Please try again later.</p>';
+            } finally {
+                // Hide loading state
+                loadingElement.style.display = 'none';
             }
         });
     </script>
